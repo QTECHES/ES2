@@ -95,25 +95,118 @@ nav ul li a:hover {
   background-color: var(--secondary-color);
 }
 
-/* About Section Styles */
+/* About Section Enhanced Styles */
 #about {
-  background-color: #e7f3fe;
-  padding: 4rem 2rem;
+    padding: 60px 0;
+    background-color: #e7f3fe;
 }
 
-#about h2 {
-  margin: 0;
-  padding: 0;
-  font-size: 2rem;
-  font-weight: bold;
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
 }
 
-#about p {
-  margin: 1rem 0;
-  padding: 0;
-  font-size: 1.2rem;
+.about-content {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
 }
 
+.about-text p {
+    line-height: 1.8;
+    color: #555;
+    margin-bottom: 20px;
+    font-size: 1.1em;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    margin: 30px 0;
+}
+
+.feature {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+}
+
+.feature:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.feature i {
+    color: var(--primary-color);
+    font-size: 2em;
+    margin-bottom: 15px;
+}
+
+.feature h4 {
+    color: var(--text-color);
+    margin-bottom: 10px;
+    font-size: 1.3em;
+}
+
+.feature p {
+    color: #666;
+    font-size: 1em;
+    line-height: 1.6;
+}
+
+.achievements {
+    margin-top: 40px;
+}
+
+.achievements ul {
+    list-style: none;
+    padding: 0;
+}
+
+.achievements li {
+    position: relative;
+    padding-left: 25px;
+    margin-bottom: 15px;
+    color: #555;
+    font-size: 1.1em;
+}
+
+.achievements li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+/* About Section Responsive Styles */
+@media (max-width: 768px) {
+    #about {
+        padding: 40px 0;
+    }
+
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .about-text p {
+        font-size: 1em;
+    }
+
+    .feature {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 0 15px;
+    }
+}
 /* Services Section Styles */
 #services {
   background-color: #fff3cd;
