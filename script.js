@@ -1,207 +1,146 @@
-// Form validation and submission handling
 document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('enquiry-form');
-    const submitButton = form.querySelector('input[type="submit"]');
-    
-    // Error message display function
-    function showError(inputElement, message) {
-        const formGroup = inputElement.closest('.form-group');
-        const errorDiv = formGroup.querySelector('.error-message') || 
-                        createErrorDiv(formGroup);
-        errorDiv.textContent = message;
-        formGroup.classList.add('error');
-        inputElement.setAttribute('aria-invalid', 'true');
-    }
+    const form = document.getElementById('enquiryForm');
+    const submitButton = form.querySelector('.submit-button');
+    const loadingSpinner = form.querySelector('.loading-spinner');
+    const buttonText = form.querySelector('.button-text');
+    const successMessage = document.getElementById('formSuccess');
+    const errorMessage = document.getElementById('formError');
 
-    // Create error message div
-    function createErrorDiv(formGroup) {
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'error-message';
-        formGroup.appendChild(errorDiv);
-        return errorDiv;
-    }
-
-    // Clear error message
-    function clearError(inputElement) {
-        const formGroup = inputElement.closest('.form-group');
-        const errorDiv = formGroup.querySelector('.error-message');
-        if (errorDiv) {
-            errorDiv.textContent = '';
-        }
-        formGroup.classList.remove('error');
-        inputElement.setAttribute('aria-invalid', 'false');
-    }
-
-    // Validation functions
+    // Form validation functions with more comprehensive checks
     const validators = {
         fullName: (value) => {
-            if (!value) return 'Please enter your full name.';
-            if (value.length < 2) return 'Name is too short. Please enter your full name.';
-            if (!/^[a-zA-Z\s]*$/.test(value)) return 'Name should only contain letters and spaces.';
-            return '';
+            const nameRegex = /^[a-zA-Z\s]{2,50}$/;
+            return nameRegex.test(value) ? '' : 'Please enter a valid name (2-50 characters, letters only)';
         },
-
         email: (value) => {
-            if (!value) return 'Please enter your email address.';
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-                return 'Please enter a valid email address (e.g., name@example.com).';
-            }
-            return '';
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(value) ? '' : 'Please enter a valid email address';
         },
-
         phone: (value) => {
-            if (!value) return 'Please enter your phone number.';
-            if (!/^\+?[\d\s-]{7,15}$/.test(value)) {
-                return 'Please enter a valid phone number (between 7 and 15 digits).';
-            }
-            return '';
+            // Allows for optional country code and different formats
+            const phoneRegex = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4}$/;
+            return phoneRegex.test(value) ? '' : 'Please enter a valid phone number';
         },
-
         course: (value) => {
-            if (!value) return 'Please select a course you\'re interested in.';
-            return '';
+            return value ? '' : 'Please select a course';
         },
-
-        studyMode: (value) => {
-            if (!value) return 'Please select your preferred study mode.';
-            return '';
-        },
-
-        dateOfBirth: (value) => {
-            if (!value) return 'Please enter your date of birth.';
-            const date = new Date(value);
-            const age = (new Date()).getFullYear() - date.getFullYear();
-            if (age < 16) return 'You must be at least 16 years old.';
-            if (age > 100) return 'Please enter a valid date of birth.';
-            return '';
+        message: (value) => {
+            return value.trim().length >= 10 ? '' : 'Message must be at least 10 characters long';
         }
     };
 
-    // Real-time validation
-    form.querySelectorAll('input, select, textarea').forEach(input => {
-        input.addEventListener('blur', function() {
-            const validator = validators[this.name];
-            if (validator) {
-                const error = validator(this.value);
-                if (error) {
-                    showError(this, error);
-                } else {
-                    clearError(this);
-                }
-            }
-        });
+    // Debounce function to limit validation frequency
+    const debounce = (func, wait) => {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    };
 
-        input.addEventListener('input', function() {
-            clearError(this);
-        });
+    // Hide messages when user starts typing
+    form.addEventListener('input', debounce(() => {
+        successMessage.style.display = 'none';
+        errorMessage.style.display = 'none';
+    }, 300));
+
+    // Add input event listeners for real-time validation
+    Object.keys(validators).forEach(fieldName => {
+        const input = form.querySelector(`#${fieldName}`);
+        const errorSpan = input.parentElement.querySelector('.error-message');
+
+        input.addEventListener('input', debounce(() => {
+            const error = validators[fieldName](input.value);
+            errorSpan.textContent = error;
+            errorSpan.style.display = error ? 'block' : 'none';
+            input.setCustomValidity(error);
+            
+            // Add/remove success/error classes
+            input.classList.remove('valid', 'invalid');
+            input.classList.add(error ? 'invalid' : 'valid');
+        }, 300));
     });
 
-    // Form submission handling
-    form.addEventListener('submit', async function(e) {
+    // Form submission handler
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        let hasErrors = false;
 
-        // Validate all fields
-        form.querySelectorAll('input, select, textarea').forEach(input => {
-            const validator = validators[input.name];
-            if (validator) {
-                const error = validator(input.value);
-                if (error) {
-                    showError(input, error);
-                    hasErrors = true;
-                }
+        // Validate all fields before submission
+        let hasErrors = false;
+        Object.keys(validators).forEach(fieldName => {
+            const input = form.querySelector(`#${fieldName}`);
+            const error = validators[fieldName](input.value);
+            if (error) {
+                hasErrors = true;
+                input.setCustomValidity(error);
             }
         });
 
         if (hasErrors) {
-            showGlobalError('Please correct the errors before submitting.');
             return;
         }
 
-        // Show loading state
+        // Hide any existing messages
+        successMessage.style.display = 'none';
+        errorMessage.style.display = 'none';
+
+        // Disable submit button and show loading spinner
         submitButton.disabled = true;
-        submitButton.value = 'Submitting...';
-        showLoadingIndicator();
+        buttonText.style.display = 'none';
+        loadingSpinner.style.display = 'block';
 
         try {
-            // Simulate API call
-            await submitFormData(new FormData(form));
-            
-            // Show success message
-            showSuccessMessage();
-            form.reset();
-            
-        } catch (error) {
-            // Handle different types of errors
-            if (error.name === 'NetworkError') {
-                showGlobalError('Network error. Please check your internet connection and try again.');
-            } else if (error.name === 'ValidationError') {
-                showGlobalError('Please check your information and try again.');
+            const formData = new FormData(form);
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                // Show success message
+                successMessage.style.display = 'block';
+                form.reset(); // Clear the form
+                
+                // Reset validation states
+                Object.keys(validators).forEach(fieldName => {
+                    const input = form.querySelector(`#${fieldName}`);
+                    input.classList.remove('valid', 'invalid');
+                });
+
+                // Scroll to success message
+                successMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
             } else {
-                showGlobalError('An unexpected error occurred. Please try again later.');
+                throw new Error('Network response was not ok');
             }
+        } catch (error) {
+            console.error('Form submission error:', error);
+            // Show error message
+            errorMessage.style.display = 'block';
+            errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
         } finally {
-            // Reset submit button
+            // Re-enable submit button and hide loading spinner
             submitButton.disabled = false;
-            submitButton.value = 'Submit';
-            hideLoadingIndicator();
+            buttonText.style.display = 'block';
+            loadingSpinner.style.display = 'none';
         }
     });
 
-    // Simulated form submission
-    async function submitFormData(formData) {
-        return new Promise((resolve, reject) => {
-            // Simulate API call
-            setTimeout(() => {
-                if (Math.random() > 0.5) { // Randomly succeed or fail
-                    resolve();
-                } else {
-                    reject(new Error('Network Error'));
-                }
-            }, 2000);
-        });
-    }
-
-    // UI feedback functions
-    function showLoadingIndicator() {
-        const loader = document.createElement('div');
-        loader.className = 'loader';
-        form.appendChild(loader);
-    }
-
-    function hideLoadingIndicator() {
-        const loader = form.querySelector('.loader');
-        if (loader) loader.remove();
-    }
-
-    function showGlobalError(message) {
-        const errorContainer = document.getElementById('form-error-container') || 
-                             createGlobalErrorContainer();
-        errorContainer.textContent = message;
-        errorContainer.style.display = 'block';
-        
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-            errorContainer.style.display = 'none';
-        }, 5000);
-    }
-
-    function createGlobalErrorContainer() {
-        const container = document.createElement('div');
-        container.id = 'form-error-container';
-        container.className = 'global-error';
-        form.insertBefore(container, form.firstChild);
-        return container;
-    }
-
-    function showSuccessMessage() {
-        const successMessage = document.createElement('div');
-        successMessage.className = 'success-message';
-        successMessage.textContent = 'Form submitted successfully!';
-        form.insertBefore(successMessage, form.firstChild);
-        
-        setTimeout(() => {
-            successMessage.remove();
-        }, 5000);
-    }
+    // Add keypress handler for Enter key
+    form.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            const inputs = Array.from(form.querySelectorAll('input, select, textarea'));
+            const currentIndex = inputs.indexOf(e.target);
+            if (currentIndex < inputs.length - 1) {
+                inputs[currentIndex + 1].focus();
+            }
+        }
+    });
 });
