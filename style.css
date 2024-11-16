@@ -920,3 +920,19 @@ footer::before {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* Container for centering the image */
+.responsive {
+  display: block;        /* Remove inline-block behavior */
+  margin: 0 auto;        /* Horizontal center */
+  max-width: 100%;       /* Ensure it doesn't exceed the container */
+  height: auto;          /* Maintain aspect ratio */
+}
+
+/* Optional: If you want to center it within a parent container */
+.center-container {
+  display: flex;
+  justify-content: center; /* Horizontal centering */
+  align-items: center;     /* Vertical centering */
+  height: 100vh;           /* Full viewport height */
+}
